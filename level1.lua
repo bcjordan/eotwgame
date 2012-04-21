@@ -10,18 +10,26 @@ local scene = storyboard.newScene()
 -- include Corona's "physics" library
 local physics = require "physics"
 physics.start(); physics.pause()
+physics.setDrawMode( "hybrid" )
+
+local mathlibapi = require("mathlib")
 
 --------------------------------------------
 
 -- forward declarations and other locals
-local screenW, screenH, halfW = display.contentWidth, display.contentHeight, display.contentWidth*0.5
+local screenW, screenH = display.contentWidth, display.contentHeight
+local halfW, halfH = screenW * 0.5, screenH * 0.5
+local globeRadius = screenH * 0.25
+local globeX, globeY = halfW
+
+local globe
 
 -----------------------------------------------------------------------------------------
 -- BEGINNING OF YOUR IMPLEMENTATION
--- 
+--
 -- NOTE: Code outside of listener functions (below) will only be executed once,
 --		 unless storyboard.removeScene() is called.
--- 
+--
 -----------------------------------------------------------------------------------------
 
 -- Called when the scene's view does not exist:
@@ -29,54 +37,79 @@ function scene:createScene( event )
 	local group = self.view
 
 	-- create a grey rectangle as the backdrop
-	local background = display.newRect( 0, 0, screenW, screenH )
-	background:setFillColor( 128 )
-	
-	-- make a crate (off-screen), position it, and rotate slightly
-	local crate = display.newImageRect( "crate.png", 90, 90 )
-	crate.x, crate.y = 160, -100
-	crate.rotation = 15
-	
-	-- add physics to the crate
-	physics.addBody( crate, { density=1.0, friction=0.3, bounce=0.3 } )
-	
-	-- create a grass object and add physics (with custom shape)
-	local grass = display.newImageRect( "grass.png", screenW, 82 )
-	grass:setReferencePoint( display.BottomLeftReferencePoint )
-	grass.x, grass.y = 0, display.contentHeight
-	
-	-- define a shape that's slightly shorter than image bounds (set draw mode to "hybrid" or "debug" to see)
-	local grassShape = { -halfW,-34, halfW,-34, halfW,34, -halfW,34 }
-	physics.addBody( grass, "static", { friction=0.3, shape=grassShape } )
-	
+    local background = display.newRect(0, 0, screenW, screenH)
+    background:setFillColor(100, 125, 255, 255)
+--    physics.addBody(background, "static", {density = -1, bounce = 0, })
+
+    -- make a crate (off-screen), position it, and rotate slightly
+--    local globe = display.newCircle(screenW / 2, screenH / 2, globeRadius)
+    globe = display.newImageRect("globe.jpg", 300, 300)
+    globe.x, globe.y = halfW, halfH
+    physics.addBody(globe, { density = 1.0, friction = 0.3, bounce = 0.3, radius = globeRadius })
+
+    -- Add center fake "mouse" joint to pin to center of screen.
+    globe.centerJoint = physics.newJoint("touch", globe, halfW, halfH )
+    globe.centerJoint.maxForce = 200000 -- Set high maxforce to minimize jiggle
+
+
+    globe:addEventListener("touch",
+        function(event)
+            local ex = event.x
+            local ey = event.y
+            if event.phase == "began" then
+                if globe.touchJoint and globe.touchJoint.maxForce then
+                    globe.touchJoint:removeSelf()
+                end
+                globe.touchJoint = physics.newJoint( "touch", globe, event.x, event.y )
+                globe.touchJoint.maxForce = 4000
+            end
+        end
+    )
+
 	-- all display objects must be inserted into group
 	group:insert( background )
-	group:insert( grass)
-	group:insert( crate )
+    group:insert( globe )
+end
+
+function scene:touch(event)
+    if event.phase == "ended" then
+        globe.touchJoint:removeSelf()
+    end
 end
 
 -- Called immediately after scene has moved onscreen:
 function scene:enterScene( event )
 	local group = self.view
-	
+
 	physics.start()
-	
+
 end
 
 -- Called when scene is about to move offscreen:
 function scene:exitScene( event )
 	local group = self.view
-	
+
 	physics.stop()
-	
+
 end
 
 -- If scene's view is removed, scene:destroyScene() will be called just prior to:
 function scene:destroyScene( event )
 	local group = self.view
-	
+
 	package.loaded[physics] = nil
 	physics = nil
+end
+
+function onScreenTouch(event)
+    if(globe.touchJoint and globe.touchJoint.maxForce) then
+        if event.phase == "moved" then
+            globe.touchJoint:setTarget( event.x, event.y)
+        end
+        if event.phase == "ended" or event.phase == "cancelled" then
+            globe.touchJoint:removeSelf()
+        end
+    end
 end
 
 -----------------------------------------------------------------------------------------
@@ -96,6 +129,8 @@ scene:addEventListener( "exitScene", scene )
 -- automatically unloaded in low memory situations, or explicitly via a call to
 -- storyboard.purgeScene() or storyboard.removeScene().
 scene:addEventListener( "destroyScene", scene )
+
+Runtime:addEventListener("touch", onScreenTouch)
 
 -----------------------------------------------------------------------------------------
 
