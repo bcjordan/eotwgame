@@ -28,11 +28,17 @@ local halfW, halfH = screenW * 0.5, screenH * 0.5
 local globeRadius = screenH * 0.25
 local globeX, globeY = halfW, halfH
 
-local globe = display.newImageRect("globe.jpg", 300, 300)
+local globe
 
 local LEVEL_FILE = "level.txt"
 local ASTEROID_VELOCITY = 50
 local asteroids = {}
+local asteroidGroup = display.newGroup()
+local asteroidsCallbacks = {}
+local score = 0
+local MAX_LIVES = 5
+local lives = MAX_LIVES
+local scoreText, livesText, scoreIndicator, livesIndicator
 
 -----------------------------------------------------------------------------------------
 -- BEGINNING OF YOUR IMPLEMENTATION
@@ -44,6 +50,9 @@ local asteroids = {}
 
 -- Called when the scene's view does not exist:
 function scene:createScene( event )
+    score = 0
+    lives = MAX_LIVES
+
     asteroids = scene:loadAsteroidsFile()
     scene:createAsteroidsCallbacks() -- on game start...
 
@@ -53,6 +62,7 @@ function scene:createScene( event )
     local background = display.newRect(0, 0, screenW, screenH)
     background:setFillColor(100, 125, 255, 255)
 
+    globe = display.newImageRect("globe.jpg", 300, 300)
     globe.x, globe.y = halfW, halfH
     physics.addBody(globe, { density = 1.0, friction = 0.3, bounce = 0.5, radius = globeRadius })
     globe:addEventListener("touch", globe)
@@ -61,9 +71,18 @@ function scene:createScene( event )
     globe.centerJoint = physics.newJoint("touch", globe, halfW, halfH )
     globe.centerJoint.maxForce = 400000 -- Set high maxforce to minimize jiggle
 
+    scoreIndicator = display.newText("Score: ", 0, 0, native.systemFont, 20)
+    scoreText = display.newText(score, 80, 0, native.systemFont, 20)
+
+    livesIndicator = display.newText("Lives:", 0, 30, native.systemFont, 20)
+    livesText = display.newText(lives, 80, 30, native.systemFont, 20)
+
     -- all display objects must be inserted into group
 	group:insert( background )
     group:insert( globe )
+    group:insert( scoreText )
+    group:insert(livesIndicator)
+    group:insert(scoreIndicator)
 end
 
 function scene:loadAsteroidsFile()
@@ -88,14 +107,26 @@ function scene:createAsteroidsCallbacks()
             else
                 if(value == 'o') then
                     local closure = function() return scene:addAsteroid( index * 90 ) end
-                    timer.performWithDelay(asteroidCreationDelay, closure)
+                    table.insert(asteroidsCallbacks, timer.performWithDelay(asteroidCreationDelay, closure))
                 end
             end
         end
     end
 end
 
-function scene:delayDestroy(asteroid)
+function scene:scoreChange(amount)
+    score = score + amount
+    scoreText.text = score
+end
+
+function scene:livesChange(amount)
+    if lives >= 1 then
+        lives = lives + amount
+        livesText.text = lives
+    end
+    if lives == 0 then -- end game
+        scene:newGame()
+    end
 end
 
 function scene:addAsteroid(angle)
@@ -112,8 +143,9 @@ function scene:addAsteroid(angle)
     asteroid:setLinearVelocity(velocityPair.x,velocityPair.y)
     asteroid.isAsteroid = true
 
-    local group = self.view
-    group:insert(asteroid)
+    asteroidGroup:insert(asteroid)
+
+    scene:scoreChange(50)
 
     function asteroid:postCollision( self, event )
         asteroid:delayDestroy()
@@ -123,10 +155,10 @@ function scene:addAsteroid(angle)
         local closure = function()
             if not (asteroid.removeSelf == nil) then
                 asteroid:removeSelf()
-                -- Put scoring here
+                scene:livesChange(-1)
             end
         end
-        timer.performWithDelay(50, closure)
+        timer.performWithDelay(0, closure)
     end
 
     asteroid:addEventListener("postCollision", asteroid)
@@ -148,12 +180,27 @@ function scene:exitScene( event )
 
 end
 
+function scene:newGame()
+    asteroidGroup:remove()
+    asteroidGroup = display.newGroup()
+    score = 0
+    lives = MAX_LIVES
+    livesText.text = lives
+
+    asteroids = scene:loadAsteroidsFile()
+
+    for i, callback in ipairs(asteroidsCallbacks) do
+        timer.cancel(callback)
+    end
+
+    for i=1,table.getn(asteroidsCallbacks),1 do table.remove(asteroidsCallbacks, i) end
+
+    scene:createAsteroidsCallbacks()
+end
+
 -- If scene's view is removed, scene:destroyScene() will be called just prior to:
 function scene:destroyScene( event )
 	local group = self.view
-
-	package.loaded[physics] = nil
-	physics = nil
 end
 
 function onScreenTouch(event)
