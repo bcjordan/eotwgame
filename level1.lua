@@ -22,7 +22,8 @@ local halfW, halfH = screenW * 0.5, screenH * 0.5
 local globeRadius = screenH * 0.25
 local globeX, globeY = halfW
 
-local globe
+local globe = display.newImageRect("globe.jpg", 300, 300)
+
 
 -----------------------------------------------------------------------------------------
 -- BEGINNING OF YOUR IMPLEMENTATION
@@ -43,37 +44,29 @@ function scene:createScene( event )
 
     -- make a crate (off-screen), position it, and rotate slightly
 --    local globe = display.newCircle(screenW / 2, screenH / 2, globeRadius)
-    globe = display.newImageRect("globe.jpg", 300, 300)
     globe.x, globe.y = halfW, halfH
     physics.addBody(globe, { density = 1.0, friction = 0.3, bounce = 0.3, radius = globeRadius })
+    globe:addEventListener("touch", globe)
 
     -- Add center fake "mouse" joint to pin to center of screen.
     globe.centerJoint = physics.newJoint("touch", globe, halfW, halfH )
-    globe.centerJoint.maxForce = 200000 -- Set high maxforce to minimize jiggle
+    globe.centerJoint.maxForce = 400000 -- Set high maxforce to minimize jiggle
 
-
-    globe:addEventListener("touch",
-        function(event)
-            local ex = event.x
-            local ey = event.y
-            if event.phase == "began" then
-                if globe.touchJoint and globe.touchJoint.maxForce then
-                    globe.touchJoint:removeSelf()
-                end
-                globe.touchJoint = physics.newJoint( "touch", globe, event.x, event.y )
-                globe.touchJoint.maxForce = 4000
-            end
-        end
-    )
-
-	-- all display objects must be inserted into group
+    -- all display objects must be inserted into group
 	group:insert( background )
     group:insert( globe )
 end
 
-function scene:touch(event)
-    if event.phase == "ended" then
-        globe.touchJoint:removeSelf()
+
+function globe:touch(event)
+    local ex = event.x
+    local ey = event.y
+    if event.phase == "began" then
+        if globe.touchJoint and globe.touchJoint.maxForce then
+            globe.touchJoint:removeSelf()
+        end
+        globe.touchJoint = physics.newJoint( "touch", globe, event.x, event.y )
+        globe.touchJoint.maxForce = 4000
     end
 end
 
