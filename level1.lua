@@ -4,7 +4,7 @@
 --
 -----------------------------------------------------------------------------------------
 
-local debug = true
+local debug = false
 
 local storyboard = require( "storyboard" )
 local scene = storyboard.newScene()
@@ -60,7 +60,7 @@ function scene:createScene( event )
 
 	-- create a grey rectangle as the backdrop
     local background = display.newRect(0, 0, screenW, screenH)
-    background:setFillColor(100, 125, 255, 255)
+    background:setFillColor(255, 255, 255, 0)
 
     globe = display.newImageRect("globe.jpg", 300, 300)
     globe.x, globe.y = halfW, halfH
@@ -83,6 +83,7 @@ function scene:createScene( event )
     group:insert( scoreText )
     group:insert(livesIndicator)
     group:insert(scoreIndicator)
+    scene:addStars()
 end
 
 function scene:loadAsteroidsFile()
@@ -111,6 +112,20 @@ function scene:createAsteroidsCallbacks()
                 end
             end
         end
+    end
+end
+
+function scene:addStars()
+    for i=1,3000 do
+        local radius = math.random(1, 1)
+
+        local point = {x = globeX + globeRadius + math.random(60,400), y = globeY}
+        local center = {x = globeX, y = globeY }
+        local angle = math.random(1,360)
+
+        local spawnLocation = rotateAboutPoint(point, center, angle, false)
+
+        display.newCircle(spawnLocation.x, spawnLocation.y, radius)
     end
 end
 
