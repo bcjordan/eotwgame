@@ -4,13 +4,18 @@
 --
 -----------------------------------------------------------------------------------------
 
+local debug = true
+
 local storyboard = require( "storyboard" )
 local scene = storyboard.newScene()
 
 -- include Corona's "physics" library
 local physics = require "physics"
 physics.start(); physics.pause()
-physics.setDrawMode( "hybrid" )
+
+if(debug) then
+    physics.setDrawMode( "hybrid" )
+end
 
 local mathlibapi = require("mathlib")
 
@@ -40,10 +45,7 @@ function scene:createScene( event )
 	-- create a grey rectangle as the backdrop
     local background = display.newRect(0, 0, screenW, screenH)
     background:setFillColor(100, 125, 255, 255)
---    physics.addBody(background, "static", {density = -1, bounce = 0, })
 
-    -- make a crate (off-screen), position it, and rotate slightly
---    local globe = display.newCircle(screenW / 2, screenH / 2, globeRadius)
     globe.x, globe.y = halfW, halfH
     physics.addBody(globe, { density = 1.0, friction = 0.3, bounce = 0.3, radius = globeRadius })
     globe:addEventListener("touch", globe)
@@ -59,15 +61,18 @@ end
 
 
 function globe:touch(event)
-    local ex = event.x
-    local ey = event.y
-    if event.phase == "began" then
-        if globe.touchJoint and globe.touchJoint.maxForce then
-            globe.touchJoint:removeSelf()
-        end
-        globe.touchJoint = physics.newJoint( "touch", globe, event.x, event.y )
-        globe.touchJoint.maxForce = 4000
+end
+
+function loadAsteroidsFile( event )
+    local LEVEL_FILE = "myfile.txt"
+    local path = system.pathForFile( LEVEL_FILE, system.DocumentsDirectory )
+    local file = io.open( path, "r" )
+
+    for line in file:lines() do
+        print( line )
     end
+
+    io.close( file )
 end
 
 -- Called immediately after scene has moved onscreen:
@@ -95,13 +100,23 @@ function scene:destroyScene( event )
 end
 
 function onScreenTouch(event)
+    local ex = event.x
+    local ey = event.y
+
     if(globe.touchJoint and globe.touchJoint.maxForce) then
         if event.phase == "moved" then
-            globe.touchJoint:setTarget( event.x, event.y)
+            globe.touchJoint:setTarget( ex, ey)
         end
         if event.phase == "ended" or event.phase == "cancelled" then
             globe.touchJoint:removeSelf()
         end
+    end
+    if event.phase == "began" then
+        if globe.touchJoint and globe.touchJoint.maxForce then
+            globe.touchJoint:removeSelf()
+        end
+        globe.touchJoint = physics.newJoint( "touch", globe, event.x, event.y )
+        globe.touchJoint.maxForce = 4000
     end
 end
 
