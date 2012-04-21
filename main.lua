@@ -3,6 +3,7 @@
 -- main.lua
 --
 -----------------------------------------------------------------------------------------
+local debug = true
 
 -- hide the status bar
 display.setStatusBar( display.HiddenStatusBar )
@@ -11,4 +12,8 @@ display.setStatusBar( display.HiddenStatusBar )
 local storyboard = require "storyboard"
 
 -- load menu screen
-storyboard.gotoScene( "menu" )
+if (debug) then
+    storyboard.gotoScene("level1")
+else
+    storyboard.gotoScene( "menu" )
+end
