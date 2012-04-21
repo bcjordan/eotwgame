@@ -72,9 +72,6 @@ function scene:loadAsteroidsFile()
 
     local waves = {}
     for line in file:lines() do
---        line:gsub(".", function(c) -- Perform a function on each character
---            table.insert(wave, c)
---        end)
         table.insert(waves, ParseCSVLine(line, ','))
     end
     io.close( file )
@@ -98,6 +95,9 @@ function scene:createAsteroidsCallbacks()
     end
 end
 
+function scene:delayDestroy(asteroid)
+end
+
 function scene:addAsteroid(angle)
     local point = {x = globeX + globeRadius + 100, y = globeY}
     local center = {x = globeX, y = globeY }
@@ -110,9 +110,26 @@ function scene:addAsteroid(angle)
     local velocityPair = rotatePoint({x= (-1) * ASTEROID_VELOCITY,y=0},angle)
 
     asteroid:setLinearVelocity(velocityPair.x,velocityPair.y)
+    asteroid.isAsteroid = true
 
     local group = self.view
     group:insert(asteroid)
+
+    function asteroid:postCollision( self, event )
+        asteroid:delayDestroy()
+    end
+
+    function asteroid:delayDestroy()
+        local closure = function()
+            if not (asteroid.removeSelf == nil) then
+                asteroid:removeSelf()
+                -- Put scoring here
+            end
+        end
+        timer.performWithDelay(50, closure)
+    end
+
+    asteroid:addEventListener("postCollision", asteroid)
 end
 
 -- Called immediately after scene has moved onscreen:
