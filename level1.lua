@@ -40,10 +40,19 @@ local MAX_LIVES = 5
 local lives = MAX_LIVES
 local scoreText, livesText, scoreIndicator, livesIndicator
 
+local GAME_OVER_DELAY = 4000
+
 local ayyiyi = audio.loadSound("ayyiyi.wav")
 local eeyeah = audio.loadSound("eeyeah.wav")
 local yow = audio.loadSound("yow.wav")
 local yeiiigh = audio.loadSound("yeiiigh.wav")
+local bounce = audio.loadSound("bounce.wav")
+local appear = audio.loadSound("appear.wav")
+local appear2 = audio.loadSound("appear2.wav")
+local planethit = audio.loadSound("planethit.wav")
+
+local ominousHandle = audio.loadStream("ominous.wav")
+
 
 -----------------------------------------------------------------------------------------
 -- BEGINNING OF YOUR IMPLEMENTATION
@@ -69,7 +78,7 @@ function scene:createScene( event )
 
     globe = display.newImageRect("globe.jpg", 300, 300)
     globe.x, globe.y = halfW, halfH
-    physics.addBody(globe, { density = 1.0, friction = 0.3, bounce = 0.5, radius = globeRadius })
+    physics.addBody(globe, { density = 1.0, friction = 0.0, bounce = 0.5, radius = globeRadius })
     globe:addEventListener("touch", globe)
 
     -- Add center fake "mouse" joint to pin to center of screen.
@@ -115,6 +124,12 @@ function scene:addTrampoline()
     physics.newJoint("weld", globe, trampoline, trampoline.x, trampoline.y+20)
     local group = self.view
     group:insert(trampoline)
+
+    function trampoline:postCollision( self, event )
+        audio.play(bounce)
+    end
+
+    trampoline:addEventListener("postCollision", trampoline)
 end
 
 function scene:loadAsteroidsFile()
@@ -164,7 +179,11 @@ function scene:scoreChange(amount)
     score = score + amount
     scoreText.text = score
     if not audio.isChannelPlaying(6) then
-        audio.play(eeyeah, {channel = 6, fadein = 1500})
+        if math.random(1,2) == 1 then
+            audio.play(appear, {channel = 6, fadein = 1500})
+        else
+            audio.play(appear2, {channel = 6, fadein = 1500})
+        end
     end
 end
 
@@ -172,9 +191,11 @@ function scene:livesChange(amount)
     if lives >= 1 then
         lives = lives + amount
         livesText.text = lives
-        if not audio.isChannelPlaying(5) then
-            audio.play(ayyiyi, {channel = 5})
-        end
+        if lives > 1 then audio.play(planethit) end
+
+        if lives == 1 then audio.play(yeiiigh, {channel = 7}) end
+        if lives == 2 then audio.play(ayyiyi, {channel = 7}) end
+
     end
     if lives == 0 then -- end game
         scene:newGame()
@@ -236,20 +257,33 @@ function scene:newGame()
     asteroidGroup:remove()
     asteroidGroup = display.newGroup()
     score = 0
-    lives = MAX_LIVES
-    livesText.text = lives
-
-    asteroids = scene:loadAsteroidsFile()
-
     for i, callback in ipairs(asteroidsCallbacks) do
         timer.cancel(callback)
     end
 
     for i=1,table.getn(asteroidsCallbacks),1 do table.remove(asteroidsCallbacks, i) end
 
-    scene:createAsteroidsCallbacks()
+    asteroids = scene:loadAsteroidsFile()
 
-    audio.play(yow)
+    if lives == 0 then
+        local loseText = display.newText("Ay yi yi. Game over", 0, 0, native.systemFont, 20)
+        loseText:setReferencePoint(display.BottomCenterReferencePoint)
+        loseText.x, loseText.y = halfW, halfH
+
+        local closure = function()
+            loseText:removeSelf()
+            lives = MAX_LIVES
+            livesText.text = lives
+
+            scene:createAsteroidsCallbacks()
+            audio.play(ominousHandle)
+        end
+        timer.performWithDelay(GAME_OVER_DELAY, closure)
+    else
+        scene:createAsteroidsCallbacks()
+        audio.play(ominousHandle)
+        livesText.text = lives
+    end
 end
 
 -- If scene's view is removed, scene:destroyScene() will be called just prior to:

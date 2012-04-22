@@ -40,7 +40,7 @@ function scene:createScene( event )
 
     musicHandle = audio.loadStream("backgrounday.wav")
 
-	-- display a background image
+    -- display a background image
 	local background = display.newImageRect( "background.jpg", display.contentWidth, display.contentHeight )
 	background:setReferencePoint( display.TopLeftReferencePoint )
 	background.x, background.y = 0, 0
@@ -76,7 +76,6 @@ function scene:enterScene( event )
 	
 	-- INSERT code here (e.g. start timers, load audio, start listeners, etc.)
     audio.play(musicHandle, { channel=1, loops=-1, fadein=5000 })
-	
 end
 
 -- Called when scene is about to move offscreen:
@@ -84,7 +83,7 @@ function scene:exitScene( event )
 	local group = self.view
 	
 	-- INSERT code here (e.g. stop timers, remove listenets, unload sounds, etc.)
-	
+    audio.stop(musicHandle)
 end
 
 -- If scene's view is removed, scene:destroyScene() will be called just prior to:
@@ -94,7 +93,7 @@ function scene:destroyScene( event )
 	if playBtn then
 		playBtn:removeSelf()	-- widgets must be manually removed
 		playBtn = nil
-	end
+    end
 end
 
 -----------------------------------------------------------------------------------------
