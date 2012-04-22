@@ -3,7 +3,7 @@
 -- main.lua
 --
 -----------------------------------------------------------------------------------------
-local debug = true
+local debug = false
 
 -- hide the status bar
 display.setStatusBar( display.HiddenStatusBar )

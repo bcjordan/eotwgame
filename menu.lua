@@ -32,9 +32,13 @@ end
 -- 
 -----------------------------------------------------------------------------------------
 
+local musicHandle
+
 -- Called when the scene's view does not exist:
 function scene:createScene( event )
 	local group = self.view
+
+    musicHandle = audio.loadStream("backgrounday.wav")
 
 	-- display a background image
 	local background = display.newImageRect( "background.jpg", display.contentWidth, display.contentHeight )
@@ -71,6 +75,7 @@ function scene:enterScene( event )
 	local group = self.view
 	
 	-- INSERT code here (e.g. start timers, load audio, start listeners, etc.)
+    audio.play(musicHandle, { channel=1, loops=-1, fadein=5000 })
 	
 end
 

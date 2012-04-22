@@ -4,7 +4,7 @@
 --
 -----------------------------------------------------------------------------------------
 
-local debug = false
+local debug = true
 
 local storyboard = require( "storyboard" )
 local scene = storyboard.newScene()
@@ -39,6 +39,11 @@ local score = 0
 local MAX_LIVES = 5
 local lives = MAX_LIVES
 local scoreText, livesText, scoreIndicator, livesIndicator
+
+local ayyiyi = audio.loadSound("ayyiyi.wav")
+local eeyeah = audio.loadSound("eeyeah.wav")
+local yow = audio.loadSound("yow.wav")
+local yeiiigh = audio.loadSound("yeiiigh.wav")
 
 -----------------------------------------------------------------------------------------
 -- BEGINNING OF YOUR IMPLEMENTATION
@@ -77,6 +82,7 @@ function scene:createScene( event )
     livesIndicator = display.newText("Lives:", 0, 30, native.systemFont, 20)
     livesText = display.newText(lives, 80, 30, native.systemFont, 20)
 
+
     -- all display objects must be inserted into group
 	group:insert( background )
     group:insert( globe )
@@ -84,6 +90,31 @@ function scene:createScene( event )
     group:insert(livesIndicator)
     group:insert(scoreIndicator)
     scene:addStars()
+    scene:addTrampoline()
+
+    scene:newGame()
+end
+
+function scene:addTrampoline()
+    -- Define at top of globe
+    local point = {x = globeX, y = globeY - globeRadius}
+    local center = {x = globeX, y = globeY }
+    local angle = 0
+
+    local spawnLocation = rotateAboutPoint(point, center, angle, false)
+
+    local trampoline = display.newImageRect("pool.png", 50,25)
+--    trampoline.rotation = angle
+    trampoline:setReferencePoint(display.BottomCenterReferencePoint)
+    trampoline.x = spawnLocation.x
+    trampoline.y = spawnLocation.y
+
+    physics.addBody(trampoline)
+
+    physics.newJoint("weld", globe, trampoline, trampoline.x+20, trampoline.y+20)
+    physics.newJoint("weld", globe, trampoline, trampoline.x, trampoline.y+20)
+    local group = self.view
+    group:insert(trampoline)
 end
 
 function scene:loadAsteroidsFile()
@@ -132,12 +163,18 @@ end
 function scene:scoreChange(amount)
     score = score + amount
     scoreText.text = score
+    if not audio.isChannelPlaying(6) then
+        audio.play(eeyeah, {channel = 6, fadein = 1500})
+    end
 end
 
 function scene:livesChange(amount)
     if lives >= 1 then
         lives = lives + amount
         livesText.text = lives
+        if not audio.isChannelPlaying(5) then
+            audio.play(ayyiyi, {channel = 5})
+        end
     end
     if lives == 0 then -- end game
         scene:newGame()
@@ -211,6 +248,8 @@ function scene:newGame()
     for i=1,table.getn(asteroidsCallbacks),1 do table.remove(asteroidsCallbacks, i) end
 
     scene:createAsteroidsCallbacks()
+
+    audio.play(yow)
 end
 
 -- If scene's view is removed, scene:destroyScene() will be called just prior to:
