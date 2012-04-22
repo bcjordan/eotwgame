@@ -4,7 +4,7 @@
 --
 -----------------------------------------------------------------------------------------
 
-local debug = true
+local debug = false
 
 local storyboard = require( "storyboard" )
 local scene = storyboard.newScene()
@@ -51,7 +51,7 @@ local appear = audio.loadSound("appear.wav")
 local appear2 = audio.loadSound("appear2.wav")
 local planethit = audio.loadSound("planethit.wav")
 
-local ominousHandle = audio.loadStream("ominous.wav")
+local ominousHandle = audio.loadStream("ominous_low.wav")
 
 
 -----------------------------------------------------------------------------------------
@@ -76,10 +76,17 @@ function scene:createScene( event )
     local background = display.newRect(0, 0, screenW, screenH)
     background:setFillColor(255, 255, 255, 0)
 
-    globe = display.newImageRect("globe.jpg", 300, 300)
+    local scaleFactor = 0.357142857
+    local physicsData = (require "pe").physicsData(scaleFactor)
+
+    globe = display.newImageRect("globe-mine.jpg", 250, 250)
+    globeLighting = display.newImageRect("globe-lighting.png", 250, 250)
     globe.x, globe.y = halfW, halfH
-    physics.addBody(globe, { density = 1.0, friction = 0.0, bounce = 0.5, radius = globeRadius })
+    globeLighting.x, globeLighting.y = halfW, halfH
+--    physics.addBody(globe, { density = 1.0, friction = 0.0, bounce = 0.5, radius = globeRadius })
     globe:addEventListener("touch", globe)
+
+    physics.addBody( globe, physicsData:get("globe-mine") )
 
     -- Add center fake "mouse" joint to pin to center of screen.
     globe.centerJoint = physics.newJoint("touch", globe, halfW, halfH )
@@ -99,7 +106,7 @@ function scene:createScene( event )
     group:insert(livesIndicator)
     group:insert(scoreIndicator)
     scene:addStars()
-    scene:addTrampoline()
+--    scene:addTrampoline()
 
     scene:newGame()
 end
