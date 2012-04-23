@@ -216,7 +216,8 @@ function scene:addAsteroid(angle)
     local spawnLocation = rotateAboutPoint(point, center, angle, false)
 
     local asteroid = display.newCircle(spawnLocation.x, spawnLocation.y, 10)
-    physics.addBody(asteroid, {radius = 10})
+    physics.addBody(asteroid, {radius = 10, pe_fixture_id = "asteroid"})
+    asteroid.pe_fixture_id = "nice"
 
     local velocityPair = rotatePoint({x= (-1) * ASTEROID_VELOCITY,y=0},angle)
 
@@ -226,22 +227,6 @@ function scene:addAsteroid(angle)
     asteroidGroup:insert(asteroid)
 
     scene:scoreChange(50)
-
-    function asteroid:postCollision( self, event )
-        asteroid:delayDestroy()
-    end
-
-    function asteroid:delayDestroy()
-        local closure = function()
-            if not (asteroid.removeSelf == nil) then
-                asteroid:removeSelf()
-                scene:livesChange(-1)
-            end
-        end
-        timer.performWithDelay(0, closure)
-    end
-
-    asteroid:addEventListener("postCollision", asteroid)
 end
 
 -- Called immediately after scene has moved onscreen:
@@ -319,6 +304,24 @@ function onScreenTouch(event)
     end
 end
 
+
+
+
+function onCollision(  event )
+    if ( event.phase == "began" ) then
+        print("began")
+--        physicsData:getFixtureId(self.myName, event.object1)
+--        print( "began: " .. event.object1.body.pe_fixture_id .. " & " .. event.object2.body.pe_fixture_id )
+    elseif ( event.phase == "ended" ) then
+        print("ended")
+--        print(event.object1.pe_fixture_id)
+--        print( "ended: " .. event.object1.body.pe_fixture_id .. " & " .. event.object2.body.pe_fixture_id )
+    else
+        print("nothing1!!")
+    end
+end
+
+
 function ParseCSVLine (line,sep)
     local res = {}
     local pos = 1
@@ -359,6 +362,22 @@ function ParseCSVLine (line,sep)
     return res
 end
 
+
+--    asteroid.collision = onCollision
+--    asteroid:addEventListener( "onCollision", asteroid )
+--
+--function asteroid:delayDestroy()
+--    local closure = function()
+--        if not (asteroid.removeSelf == nil) then
+--            asteroid:removeSelf()
+--            scene:livesChange(-1)
+--        end
+--    end
+--    timer.performWithDelay(0, closure)
+--end
+
+--asteroid:addEventListener("postCollision", asteroid)
+
 -----------------------------------------------------------------------------------------
 -- END OF YOUR IMPLEMENTATION
 -----------------------------------------------------------------------------------------
@@ -378,6 +397,8 @@ scene:addEventListener( "exitScene", scene )
 scene:addEventListener( "destroyScene", scene )
 
 Runtime:addEventListener("touch", onScreenTouch)
+
+Runtime:addEventListener("collision", onCollision)
 
 -----------------------------------------------------------------------------------------
 
