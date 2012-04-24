@@ -1,5 +1,9 @@
 # End of the World
 
+# Screenshot
+
+![](https://github.com/bcjordan/eotwgame/raw/master/screenshot.png)
+
 # Instructions
 
 * Touch and drag the globe to turn it
